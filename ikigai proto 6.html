@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ikigai Finder</title>
+
+<style>
+body {
+  margin:0;
+  font-family:'Segoe UI',sans-serif;
+  background:linear-gradient(135deg,#0f172a,#1e3a8a);
+  color:white;
+  display:flex;
+  justify-content:center;
+}
+
+.container {
+  width:100%;
+  max-width:420px;
+  padding:20px;
+  padding-bottom:80px;
+}
+
+.top-bar {
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+
+.circle-box {text-align:center; flex:1;}
+
+.circle {
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  margin:auto;
+  opacity:0.3;
+  transition:0.4s;
+}
+
+.label {font-size:10px; opacity:0.6;}
+
+.love {background:#ef4444;}
+.skill {background:#3b82f6;}
+.need {background:#22c55e;}
+.money {background:#f59e0b;}
+
+.active {opacity:1; box-shadow:0 0 15px white;}
+.completed {opacity:0.8; box-shadow:0 0 25px white;}
+
+.card {
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(15px);
+  padding:20px;
+  border-radius:20px;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  background:rgba(255,255,255,0.2);
+  color:white;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover {
+  transform:scale(1.05);
+}
+
+.bottom-bar {
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  background:rgba(0,0,0,0.6);
+  padding:10px;
+}
+
+.progress-track {
+  height:6px;
+  background:rgba(255,255,255,0.2);
+  border-radius:10px;
+}
+
+.progress-fill {
+  height:100%;
+  width:0%;
+  background:#22c55e;
+  border-radius:10px;
+  transition:0.4s;
+}
+
+.step-text {
+  font-size:12px;
+  text-align:right;
+  margin-top:4px;
+  opacity:0.7;
+}
+
+/* RESULT DESIGN */
+
+.result-card {
+  background:rgba(255,255,255,0.06);
+  border-radius:18px;
+  padding:18px;
+  margin-top:15px;
+  border:1px solid rgba(255,255,255,0.08);
+  animation:fadeUp 0.4s ease;
+}
+
+.result-title {
+  font-size:18px;
+  font-weight:600;
+  margin-bottom:8px;
+  letter-spacing:0.5px;
+}
+
+.result-text {
+  font-size:14px;
+  opacity:0.85;
+  line-height:1.6;
+}
+
+.highlight-box {
+  background:rgba(34,197,94,0.15);
+  border:1px solid rgba(34,197,94,0.4);
+  padding:15px;
+  border-radius:12px;
+  margin-top:15px;
+}
+
+.highlight-title {
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:5px;
+}
+
+ul {padding-left:18px;}
+li {margin-bottom:6px; font-size:14px;}
+
+@keyframes fadeUp {
+  from {opacity:0; transform:translateY(10px);}
+  to {opacity:1; transform:translateY(0);}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="top-bar">
+  <div class="circle-box"><div id="loveCircle" class="circle love"></div><div class="label">LOVE</div></div>
+  <div class="circle-box"><div id="skillCircle" class="circle skill"></div><div class="label">SKILL</div></div>
+  <div class="circle-box"><div id="needCircle" class="circle need"></div><div class="label">NEED</div></div>
+  <div class="circle-box"><div id="moneyCircle" class="circle money"></div><div class="label">MONEY</div></div>
+</div>
+
+<div class="card">
+  <h2>Ikigai Finder</h2>
+  <p id="sectionTitle"></p>
+  <p id="question">Start your journey</p>
+  <div id="answers"></div>
+  <button id="startBtn" onclick="startQuiz()">Start</button>
+</div>
+
+</div>
+
+<div class="bottom-bar">
+  <div class="progress-track">
+    <div id="progressFill" class="progress-fill"></div>
+  </div>
+  <div id="stepText" class="step-text">0 / 12</div>
+</div>
+
+<script>
+
+let step=0;
+const total=12;
+
+let scores={
+  Creative:0,
+  Analytical:0,
+  Helping:0,
+  Business:0,
+  Tech:0
+};
+
+const sections=["LOVE","SKILL","NEED","MONEY"];
+
+const questions=[
+["When alive?","If money didn’t matter?","Content you like?"],
+["Praised for?","Easy for you?","Best tasks?"],
+["Problem?","Who help?","Impact?"],
+["Field?","Environment?","Income?"]
+];
+
+const options=[
+
+[
+{text:"Create",trait:"Creative"},
+{text:"Solve",trait:"Analytical"},
+{text:"Help",trait:"Helping"},
+{text:"Lead",trait:"Business"},
+{text:"Explore",trait:"Tech"}
+],
+
+[
+{text:"Travel",trait:"Creative"},
+{text:"Research",trait:"Analytical"},
+{text:"Teach",trait:"Helping"},
+{text:"Business",trait:"Business"},
+{text:"Build",trait:"Tech"}
+],
+
+[
+{text:"Creative Content",trait:"Creative"},
+{text:"Educational",trait:"Helping"},
+{text:"Motivational",trait:"Helping"},
+{text:"Business",trait:"Business"},
+{text:"Tech",trait:"Tech"}
+],
+
+[
+{text:"Creativity",trait:"Creative"},
+{text:"Logic",trait:"Analytical"},
+{text:"Helping",trait:"Helping"},
+{text:"Leadership",trait:"Business"},
+{text:"Knowledge",trait:"Tech"}
+],
+
+[
+{text:"Express",trait:"Creative"},
+{text:"Understand",trait:"Analytical"},
+{text:"Explain",trait:"Helping"},
+{text:"Initiate",trait:"Business"},
+{text:"Learn",trait:"Tech"}
+],
+
+[
+{text:"Creative Work",trait:"Creative"},
+{text:"Analytical Work",trait:"Analytical"},
+{text:"Social Work",trait:"Helping"},
+{text:"Management",trait:"Business"},
+{text:"Tech Work",trait:"Tech"}
+],
+
+[
+{text:"Creativity",trait:"Creative"},
+{text:"Education",trait:"Helping"},
+{text:"Mental Health",trait:"Helping"},
+{text:"Finance",trait:"Business"},
+{text:"Technology",trait:"Tech"}
+],
+
+[
+{text:"Creators",trait:"Creative"},
+{text:"Students",trait:"Helping"},
+{text:"People",trait:"Helping"},
+{text:"Entrepreneurs",trait:"Business"},
+{text:"Society",trait:"Tech"}
+],
+
+[
+{text:"Inspire",trait:"Creative"},
+{text:"Teach",trait:"Helping"},
+{text:"Heal",trait:"Helping"},
+{text:"Opportunity",trait:"Business"},
+{text:"Innovate",trait:"Tech"}
+],
+
+[
+{text:"Creative",trait:"Creative"},
+{text:"Education",trait:"Helping"},
+{text:"Counseling",trait:"Helping"},
+{text:"Business",trait:"Business"},
+{text:"Tech",trait:"Tech"}
+],
+
+[
+{text:"Flexible",trait:"Creative"},
+{text:"Structured",trait:"Analytical"},
+{text:"People",trait:"Helping"},
+{text:"Fast",trait:"Business"},
+{text:"Innovative",trait:"Tech"}
+],
+
+[
+{text:"Freelance",trait:"Creative"},
+{text:"Stable",trait:"Analytical"},
+{text:"Helping",trait:"Helping"},
+{text:"Entrepreneur",trait:"Business"},
+{text:"High-tech",trait:"Tech"}
+]
+
+];
+
+const insightTemplates={
+
+"Creative_Helping":{
+summary:"You express ideas that emotionally connect with people.",
+strength:"Creativity combined with empathy.",
+conflict:"Balancing personal expression with external expectations.",
+potential:"Ability to build an impactful personal brand.",
+blind:"Waiting too long for perfection.",
+direction:"Focus on consistent creation."
+},
+
+"Analytical_Tech":{
+summary:"You understand systems and solve complex problems.",
+strength:"Strong logical thinking.",
+conflict:"Stuck between learning and applying.",
+potential:"Highly valuable technical expertise.",
+blind:"Overthinking delays execution.",
+direction:"Start building real projects."
+},
+
+"Creative_Business":{
+summary:"You turn ideas into opportunities.",
+strength:"Imagination with execution.",
+conflict:"Too many ideas without commitment.",
+potential:"Build profitable ventures.",
+blind:"Lack of focus.",
+direction:"Commit to one idea deeply."
+},
+
+"Helping_Business":{
+summary:"You improve lives with structured impact.",
+strength:"Leadership with empathy.",
+conflict:"Helping others vs achieving measurable success.",
+potential:"Build impactful systems.",
+blind:"Taking on too much responsibility.",
+direction:"Create sustainable systems."
+},
+
+"Analytical_Business":{
+summary:"You think in terms of strategy and results.",
+strength:"Strong decision-making ability.",
+conflict:"Hesitation in taking risks.",
+potential:"Excel in leadership roles.",
+blind:"Over-analysis.",
+direction:"Take calculated risks."
+}
+
+};
+
+const careerMap={
+
+"Creative_Helping":["Content Creator","Teacher","Counselor","Speaker"],
+"Analytical_Tech":["Developer","Data Analyst","Engineer","AI Specialist"],
+"Creative_Business":["Entrepreneur","Brand Strategist","Marketing Creator"],
+"Helping_Business":["NGO Leader","HR","Coach","Social Entrepreneur"],
+"Analytical_Business":["Consultant","Business Analyst","Finance Expert"]
+
+};
+
+const bestCareerMap={
+
+"Creative_Helping":{
+role:"Content Creator / Educator",
+reason:"It allows you to express ideas while impacting people directly."
+},
+
+"Analytical_Tech":{
+role:"Software Developer",
+reason:"It uses your problem-solving mindset to build solutions."
+},
+
+"Creative_Business":{
+role:"Entrepreneur",
+reason:"It lets you turn ideas into value and income."
+},
+
+"Helping_Business":{
+role:"Life Coach / Leader",
+reason:"It combines helping people with structured growth."
+},
+
+"Analytical_Business":{
+role:"Business Strategist",
+reason:"It fits your logical thinking and planning ability."
+}
+
+};
+
+function updateProgress(){
+  let percent=(step/total)*100;
+  document.getElementById("progressFill").style.width=percent+"%";
+  document.getElementById("stepText").innerText=step+" / "+total;
+}
+
+function updateCircles(sectionIndex){
+  const ids=["loveCircle","skillCircle","needCircle","moneyCircle"];
+  ids.forEach((id,i)=>{
+    let el=document.getElementById(id);
+    el.classList.remove("active","completed");
+    if(i<sectionIndex) el.classList.add("completed");
+    else if(i===sectionIndex) el.classList.add("active");
+  });
+}
+
+function startQuiz(){
+  step=0;
+  document.getElementById("startBtn").style.display="none";
+  showQuestion();
+}
+
+function showQuestion(){
+  updateProgress();
+  let q=document.getElementById("question");
+  let a=document.getElementById("answers");
+  let sec=document.getElementById("sectionTitle");
+
+  a.innerHTML="";
+  let sectionIndex=Math.floor(step/3);
+
+  if(step<total){
+    updateCircles(sectionIndex);
+    sec.innerText=sections[sectionIndex];
+    let questionIndex=step%3;
+    q.innerText=questions[sectionIndex][questionIndex];
+
+    options[step].forEach(opt=>{
+      let btn=document.createElement("button");
+      btn.innerText=opt.text;
+      btn.onclick=()=>selectAnswer(opt.trait);
+      a.appendChild(btn);
+    });
+
+  } else {
+    showResult();
+  }
+}
+
+function selectAnswer(trait){
+  scores[trait]++;
+  step++;
+  showQuestion();
+}
+
+function showResult(){
+  updateProgress();
+  updateCircles(4);
+
+  let q=document.getElementById("question");
+  let a=document.getElementById("answers");
+
+  let sorted=Object.keys(scores).sort((x,y)=>scores[y]-scores[x]);
+  let top1=sorted[0];
+  let top2=sorted[1];
+  let type=top1+"_"+top2;
+
+  let data=insightTemplates[type] || {
+    summary:"You are multi-potential.",
+    strength:"Balanced strengths.",
+    conflict:"Multiple directions.",
+    potential:"Adaptable personality.",
+    blind:"Lack of focus.",
+    direction:"Choose one direction."
+  };
+
+  let careers=careerMap[type] || ["Multiple paths"];
+
+  let bestCareer=bestCareerMap[type] || {
+    role:"Flexible Career Path",
+    reason:"You can explore multiple options."
+  };
+
+  let gap=scores[top1]-scores[top2];
+  let note="";
+  if(gap<2) note="You have a balanced personality with multiple strengths.";
+  else if(scores[top1]>6) note="You have a strong dominant trait.";
+
+  q.innerHTML="Your Ikigai Insight";
+
+  a.innerHTML=`
+
+<div class="result-card">
+  <div class="result-title">Your Ikigai Profile</div>
+  <div class="result-text"><b>${top1} + ${top2}</b></div>
+</div>
+
+<div class="highlight-box">
+  <div class="highlight-title">Best Career Path</div>
+  <div class="result-text"><b>${bestCareer.role}</b></div>
+  <div class="result-text" style="margin-top:5px;">${bestCareer.reason}</div>
+</div>
+
+<div class="result-card">
+  <div class="result-title">Identity Summary</div>
+  <div class="result-text">${data.summary}</div>
+</div>
+
+<div class="result-card">
+  <div class="result-title">Core Strength Pattern</div>
+  <div class="result-text">${data.strength}</div>
+</div>
+
+<div class="result-card">
+  <div class="result-title">Internal Conflict</div>
+  <div class="result-text">${data.conflict}</div>
+</div>
+
+<div class="result-card">
+  <div class="result-title">Hidden Potential</div>
+  <div class="result-text">${data.potential}</div>
+</div>
+
+<div class="result-card">
+  <div class="result-title">Blind Spots</div>
+  <div class="result-text">${data.blind}</div>
+</div>
+
+<div class="result-card">
+  <div class="result-title">Direction</div>
+  <div class="result-text"><b>${data.direction}</b></div>
+</div>
+
+<div class="result-card">
+  <div class="result-title">Recommended Career Options</div>
+  <ul>
+    ${careers.map(c=>`<li>${c}</li>`).join("")}
+  </ul>
+</div>
+
+<div class="result-card">
+  <div class="result-text">${note}</div>
+</div>
+
+`;
+
+  let restart=document.createElement("button");
+  restart.innerText="Restart";
+  restart.onclick=()=>location.reload();
+  a.appendChild(restart);
+}
+
+</script>
+
+</body>
+</html>
